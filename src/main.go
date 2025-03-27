@@ -9,12 +9,12 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var users []*websocket.Conn
+var users = make(map[int]*websocket.Conn)
 
 // why go
 type Message struct {
 	Type    string `json:"type"`
-	Id      string `json:"id"`
+	Id      int    `json:"id"`
 	Payload string `json:"payload"`
 }
 
@@ -33,7 +33,10 @@ func echo(res http.ResponseWriter, req *http.Request) {
 	defer conn.Close()
 
 	for {
+		// message is the message  mt is message type
 		mt, message, err := conn.ReadMessage()
+		// message type
+		log.Print("mesage type is ", mt)
 
 		if err != nil {
 			log.Print("Read Message Failed")
@@ -46,7 +49,12 @@ func echo(res http.ResponseWriter, req *http.Request) {
 
 		switch jsonData.Type {
 		case "join":
-			users = append(users, conn)
+			log.Print("The Id is ", jsonData.Id)
+			if conn == users[jsonData.Id] {
+				log.Print("The User is already present")
+				break
+			}
+			users[jsonData.Id] = conn
 			log.Print(users)
 		case "message":
 			for _, val := range users {
